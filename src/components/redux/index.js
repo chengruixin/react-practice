@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useReducer, useState } from 'react'
-import { StoreProvider, useDispatch, connect } from './redux'
+import React, { useEffect, useState } from 'react'
+import { StoreProvider, connect } from './redux'
 
 export default function App() {
     return (
@@ -25,22 +25,33 @@ const ChildOne = connect((state) => {
     )
 })
 
-const ChildTwo = connect()(({ dispatch, state }) => {
+const ChildTwo = connect(null, (dispatch) => {
+    return {
+        plusOne() {
+            dispatch({ type: 'PLUS' })
+        },
+        minusOne() {
+            dispatch({ type: 'MINUS' })
+        },
+        updateText(atttrs) {
+            dispatch({ type: 'UPDATE', payload: atttrs })
+        },
+    }
+})(({ plusOne, minusOne, updateText, state }) => {
     const handleClickPlus = () => {
-        dispatch({ type: 'PLUS' })
+        plusOne()
     }
 
     const handleClickMinus = () => {
-        dispatch({ type: 'MINUS' })
+        minusOne()
     }
 
     const handleInputChange = (e) => {
-        const inputVal = e.target.value
-        dispatch({ type: 'UPDATE', payload: inputVal })
+        updateText(e.target.value)
     }
 
     useEffect(() => {
-        console.log(state)
+        console.log('two executed')
     })
 
     return (
@@ -53,9 +64,11 @@ const ChildTwo = connect()(({ dispatch, state }) => {
     )
 })
 
-function ChildThree() {
+const ChildThree = connect((state) => {
+    return { group: state.group }
+})(({ group }) => {
     useEffect(() => {
         console.log('Three executed')
     })
-    return <div>ChildThree: hello there</div>
-}
+    return <div>ChildThree: hello there, {group.name}</div>
+})

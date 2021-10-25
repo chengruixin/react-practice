@@ -1,13 +1,16 @@
 import React from 'react'
 import './App.css'
-import ReduxDemo from './components/redux'
+import Updater from './components/setStatePractice'
+import Counter from './components/Counter'
 
 function App() {
     return (
         <div className="App">
-            <ReduxDemo />
+            <Counter />
         </div>
     )
 }
+
+
 
 export default App

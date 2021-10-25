@@ -1,8 +1,11 @@
-import React, { useContext, useState } from 'react'
-
+import React, { useContext, useEffect, useState } from 'react'
+import { Map } from 'immutable'
 const defaultState = {
     count: 0,
     text: '',
+    group: {
+        name: 'to display purpose',
+    },
 }
 const Context = React.createContext()
 
@@ -16,16 +19,31 @@ export const useDispatch = () => {
     return [state, dispatch]
 }
 
-export const connect = (selector) => (Component) => {
-    return () => {
-        const { dispatch, subscribe, state } = useContext(Context)
+export const connect = (selector, dispatcherSelector) => (Component) => {
+    return (props) => {
+        const { subscribe, state, dispatch } = useContext(Context)
         const [refresh, toRefresh] = useState(true)
         const data = selector ? selector(state) : { state }
-        console.log(data)
-        const unSubscribe = subscribe(() => {
-            toRefresh(!refresh)
+        const dispatchers = dispatcherSelector
+            ? dispatcherSelector(dispatch)
+            : { dispatch }
+
+        useEffect(() => {
+            const unSubscribe = subscribe((oldState, newState) => {
+                const oldMap = Map(selector ? selector(oldState) : oldState)
+                const newMap = Map(selector ? selector(newState) : newState)
+
+                if (!oldMap.equals(newMap)) {
+                    toRefresh(!refresh)
+                }
+            })
+
+            return () => {
+                unSubscribe()
+            }
         })
-        return <Component dispatch={dispatch} {...data} />
+
+        return <Component {...props} {...dispatchers} {...data} />
     }
 }
 
@@ -60,9 +78,10 @@ const reducers = (state, { type, payload }) => {
 
 const createStore = (initialState, reducer) => {
     let state = initialState
-    let oldState = null;
+    let oldState = null
     const callbacks = []
     function setState(newState) {
+        oldState = state
         state = newState
     }
     return {
@@ -70,7 +89,7 @@ const createStore = (initialState, reducer) => {
             setState(reducer(state, action))
             // console.log(state)
             callbacks.forEach((callback) => {
-                callback()
+                callback(oldState, state)
             })
         },
 
